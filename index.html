@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing Hub</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ================= CSS ================= */
+:root{
+  --ink-900:#14152B; --ink-700:#3A3B57; --ink-500:#6B6C86; --ink-300:#A6A7BC; --ink-100:#E7E7F0;
+  --bg:#F5F5FB; --surface:#FFFFFF; --border:#E4E4F0;
+  --violet:#5B4CF5; --violet-dark:#4636D6; --violet-tint:#EFEDFF;
+  --green:#1E9E6B; --green-tint:#E6F7F0;
+  --red:#E0454B; --red-tint:#FDEAEB;
+  --amber:#D98A1F; --amber-tint:#FCF1DF;
+  --radius-lg:16px; --radius-md:12px; --radius-sm:8px;
+  --shadow:0 1px 2px rgba(20,21,43,.04), 0 6px 20px -8px rgba(20,21,43,.10);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Inter',sans-serif; background:var(--bg); color:var(--ink-900);
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+button,input,select,textarea{font:inherit;}
+button{cursor:pointer;}
+a{text-decoration:none;color:inherit;}
+.hidden{display:none!important;}
+.app{min-height:100vh;display:flex;}
+.sidebar{position:fixed;inset:0 auto 0 0;width:248px;background:#fff;border-right:1px solid var(--border);padding:22px 14px;z-index:30;display:flex;flex-direction:column;}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 26px;font-family:Sora,sans-serif;font-weight:800;font-size:19px;}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:var(--violet);display:grid;place-items:center;color:#fff;font-weight:800;box-shadow:0 8px 18px rgba(91,76,245,.25);}
+.brand span{color:var(--violet);}
+.nav{display:flex;flex-direction:column;gap:4px;}
+.nav button{border:0;background:transparent;color:var(--ink-500);padding:11px 12px;border-radius:10px;text-align:left;display:flex;align-items:center;gap:11px;font-size:14px;font-weight:600;}
+.nav button:hover{background:var(--bg);color:var(--ink-900);}
+.nav button.active{background:var(--violet-tint);color:var(--violet);}
+.nav-icon{width:20px;text-align:center;font-size:16px;}
+.sidebar-bottom{margin-top:auto;display:grid;gap:8px;}
+.sidebar-bottom button{border:1px solid var(--border);background:#fff;color:var(--ink-700);padding:10px 12px;border-radius:10px;text-align:left;font-weight:600;}
+.main{margin-left:248px;width:calc(100% - 248px);min-height:100vh;}
+.topbar{height:70px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:20;}
+.search-wrap{position:relative;width:min(440px,45vw);}
+.search-wrap input{width:100%;border:1px solid var(--border);background:var(--bg);padding:10px 14px 10px 40px;border-radius:10px;outline:none;color:var(--ink-900);}
+.search-wrap input:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-tint);}
+.search-icon{position:absolute;left:14px;top:10px;color:var(--ink-500);}
+.top-actions{display:flex;align-items:center;gap:10px;}
+.icon-btn{border:1px solid var(--border);background:#fff;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--ink-700);position:relative;}
+.dot{position:absolute;right:7px;top:7px;width:7px;height:7px;border-radius:50%;background:var(--red);}
+.business-chip{display:flex;align-items:center;gap:9px;margin-left:6px;padding-left:14px;border-left:1px solid var(--border);font-size:13px;font-weight:700;}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--violet-tint);color:var(--violet);display:grid;place-items:center;font-weight:800;}
+.container{max-width:1450px;margin:0 auto;padding:28px;}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px;}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--violet);font-weight:800;margin-bottom:7px;}
+h1,h2,h3{font-family:Sora,sans-serif;}
+h1{font-size:28px;line-height:1.15;}
+h2{font-size:18px;}
+h3{font-size:15px;}
+.subtitle{color:var(--ink-500);font-size:13px;margin-top:7px;line-height:1.5;}
+.actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:7px;}
+.btn.primary{background:var(--violet);color:#fff;box-shadow:0 8px 18px rgba(91,76,245,.18);}
+.btn.primary:hover{background:var(--violet-dark);}
+.btn.secondary{background:#fff;color:var(--ink-700);border:1px solid var(--border);}
+.btn.danger{background:var(--red-tint);color:var(--red);}
+.btn.success{background:var(--green-tint);color:var(--green);}
+.grid{display:grid;gap:16px;}
+.grid.kpis{grid-template-columns:repeat(4,minmax(0,1fr));}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr));}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr));}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:19px;box-shadow:var(--shadow);}
+.kpi{min-height:128px;display:flex;flex-direction:column;justify-content:space-between;}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;color:var(--ink-500);font-size:12px;font-weight:700;}
+.kpi-icon{width:35px;height:35px;border-radius:10px;background:var(--violet-tint);color:var(--violet);display:grid;place-items:center;}
+.kpi-value{font-family:Sora,sans-serif;font-size:26px;font-weight:800;margin-top:8px;}
+.kpi-foot{font-size:12px;color:var(--green);font-weight:700;}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.section-title p{font-size:12px;color:var(--ink-500);}
+.chart-card{min-height:335px;}
+.chart-box{height:260px;position:relative;}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;}
+table{width:100%;border-collapse:collapse;min-width:760px;}
+th,td{text-align:left;padding:12px 13px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap;}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-500);background:#FAFAFD;}
+tr:last-child td{border-bottom:0;}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800;}
+.badge.success{background:var(--green-tint);color:var(--green);}
+.badge.warning{background:var(--amber-tint);color:var(--amber);}
+.badge.danger{background:var(--red-tint);color:var(--red);}
+.badge.neutral{background:var(--bg);color:var(--ink-500);}
+.progress{height:7px;border-radius:999px;background:var(--bg);overflow:hidden;margin-top:9px;}
+.progress>span{height:100%;display:block;border-radius:inherit;background:var(--violet);}
+.list{display:grid;gap:10px;}
+.list-item{border:1px solid var(--border);border-radius:12px;padding:13px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.list-main{min-width:0;}
+.list-main strong{font-size:13px;display:block;margin-bottom:5px;}
+.list-main small{font-size:11px;color:var(--ink-500);line-height:1.45;}
+.empty{padding:30px;text-align:center;color:var(--ink-500);font-size:13px;}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;}
+.field{display:grid;gap:6px;}
+.field.full{grid-column:1/-1;}
+.field label{font-size:11px;font-weight:800;color:var(--ink-700);}
+.field input,.field select,.field textarea{border:1px solid var(--border);border-radius:9px;padding:10px 11px;outline:none;background:#fff;color:var(--ink-900);}
+.field textarea{min-height:100px;resize:vertical;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-tint);}
+.modal-overlay{position:fixed;inset:0;background:rgba(20,21,43,.38);display:none;align-items:center;justify-content:center;padding:20px;z-index:80;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{width:min(680px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;border:1px solid var(--border);box-shadow:0 25px 80px rgba(20,21,43,.25);}
+.modal-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.close-x{border:0;background:var(--bg);width:34px;height:34px;border-radius:9px;color:var(--ink-700);}
+.modal-body{padding:20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.search-results{position:absolute;top:47px;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;z-index:90;}
+.sr-group{padding:9px 12px 6px;font-size:10px;font-weight:800;text-transform:uppercase;color:var(--ink-500);background:#FAFAFD;}
+.sr-item{padding:10px 12px;font-size:12px;cursor:pointer;border-top:1px solid var(--border);}
+.sr-item:hover{background:var(--violet-tint);}
+.search-empty{padding:16px;color:var(--ink-500);font-size:12px;}
+.alert{border:1px solid var(--border);border-radius:12px;padding:13px;display:flex;gap:10px;align-items:flex-start;}
+.alert strong{font-size:12px;display:block;margin-bottom:4px;}
+.alert p{font-size:11px;color:var(--ink-500);line-height:1.45;}
+.integration{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid var(--border);border-radius:13px;background:#fff;}
+.integration + .integration{margin-top:10px;}
+.integration-info{display:flex;align-items:center;gap:12px;}
+.integration-logo{width:40px;height:40px;border-radius:11px;background:var(--bg);display:grid;place-items:center;font-weight:800;color:var(--violet);}
+.integration h3{font-size:13px;margin-bottom:4px;}
+.integration p{font-size:11px;color:var(--ink-500);}
+.connection{font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:var(--green-tint);color:var(--green);}
+.connection.off{background:var(--bg);color:var(--ink-500);}
+.mobile-menu{display:none;}
+.ai-box{background:linear-gradient(135deg,#F4F1FF,#fff);border-color:#DDD8FF;}
+.ai-box .btn{margin-top:12px;}
+.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.calendar-head{padding:8px;font-size:10px;font-weight:800;text-align:center;background:#FAFAFD;color:var(--ink-500);border-right:1px solid var(--border);}
+.calendar-day{min-height:92px;padding:8px;border-top:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;}
+.calendar-day:nth-child(7n){border-right:0;}
+.day-num{font-weight:800;color:var(--ink-700);margin-bottom:7px;}
+.event{font-size:9px;background:var(--violet-tint);color:var(--violet);padding:4px 5px;border-radius:6px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media(max-width:1050px){.grid.kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.grid.three{grid-template-columns:1fr 1fr;}}
+@media(max-width:820px){.sidebar{transform:translateX(-100%);transition:.2s;width:270px;box-shadow:0 0 0 100vmax rgba(0,0,0,0);}.sidebar.open{transform:translateX(0);box-shadow:0 0 0 100vmax rgba(20,21,43,.3);}.main{margin-left:0;width:100%;}.mobile-menu{display:grid;}.topbar{padding:0 14px;}.search-wrap{width:min(55vw,320px);}.business-chip{display:none;}.container{padding:18px 14px;}.grid.two,.grid.three{grid-template-columns:1fr;}.page-head{align-items:flex-start;}.form-grid{grid-template-columns:1fr;}.field.full{grid-column:auto;}}
+@media(max-width:560px){.grid.kpis{grid-template-columns:1fr 1fr;gap:10px;}.kpi{min-height:112px;padding:14px;}.kpi-value{font-size:20px;}h1{font-size:23px;}.topbar{height:62px;}.search-wrap{width:calc(100vw - 125px);}.top-actions{gap:6px;}.icon-btn{width:36px;height:36px;}.actions{width:100%;justify-content:flex-start;}.page-head{display:block}.page-head .actions{margin-top:14px;}.calendar-day{min-height:74px;padding:5px;}.event{font-size:8px;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">M</div><div>Marketing<span>Hub</span></div></div>
+    <nav class="nav" id="nav">
+      <button data-page="dashboard" class="active"><span class="nav-icon">▦</span>Dashboard</button>
+      <button data-page="ads"><span class="nav-icon">↗</span>Publicidad</button>
+      <button data-page="content"><span class="nav-icon">▤</span>Contenido</button>
+      <button data-page="customers"><span class="nav-icon">♙</span>Clientes</button>
+      <button data-page="reviews"><span class="nav-icon">★</span>Reseñas</button>
+      <button data-page="promos"><span class="nav-icon">◇</span>Promociones</button>
+      <button data-page="analytics"><span class="nav-icon">◒</span>Analytics</button>
+      <button data-page="tasks"><span class="nav-icon">✓</span>Tareas</button>
+      <button data-page="reports"><span class="nav-icon">▥</span>Reportes</button>
+      <button data-page="settings"><span class="nav-icon">⚙</span>Configuración</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button id="demo-reset">↻ Reiniciar demo</button>
+      <button id="logout">⇥ Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn mobile-menu" id="mobile-menu">☰</button>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input id="global-search" placeholder="Buscar campañas, clientes, contenido..." autocomplete="off">
+        <div class="search-results hidden" id="search-results"></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="notification-btn" title="Notificaciones">♧<span class="dot hidden" id="notification-dot"></span></button>
+        <div class="business-chip"><div class="avatar" id="avatar">MH</div><span id="business-name-top">Mi negocio</span></div>
+      </div>
+    </header>
+
+    <div class="container" id="view"></div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal-box"></div></div>
+
+<script>
+/* ================= DEMO DATA ================= */
+function cid(){ return 'id-' + Math.random().toString(36).slice(2,10); }
+function buildDemoData(){
+  return {
+    business:{name:'La Esquina',category:'Restaurante',budget:150000,address:'Av. Corrientes 1234, CABA',phone:'+54 11 4567-8900',instagram:'@laesquina',whatsapp:'+54 9 11 5555-5555'},
+    campaigns:[
+      {id:cid(),name:'Instagram — Promo 2x1',platform:'Instagram',objective:'Ventas',budget:80000,spent:62400,sales:73,queries:186,status:'Activa'},
+      {id:cid(),name:'Meta — Alcance local',platform:'Facebook',objective:'Alcance',budget:45000,spent:31400,sales:21,queries:94,status:'Activa'},
+      {id:cid(),name:'Google — Restaurante CABA',platform:'Google',objective:'Consultas',budget:35000,spent:28400,sales:29,queries:112,status:'Activa'}
+    ],
+    content:[
+      {id:cid(),title:'Promo 2x1 de viernes',date:'2026-09-05',platform:'Instagram',format:'Post',status:'Programado'},
+      {id:cid(),title:'Behind the scenes de cocina',date:'2026-09-06',platform:'Instagram',format:'Reel',status:'Borrador'},
+      {id:cid(),title:'Menú de la semana',date:'2026-09-07',platform:'WhatsApp',format:'Mensaje',status:'Publicado'},
+      {id:cid(),title:'Historia: reservá tu mesa',date:'2026-09-08',platform:'Instagram',format:'Story',status:'Programado'}
+    ],
+    customers:[
+      {id:cid(),name:'Sofía Martínez',phone:'+54 9 11 5555-1111',email:'sofia@mail.com',status:'Activo',last:'2026-09-03'},
+      {id:cid(),name:'Tomás Pérez',phone:'+54 9 11 5555-2222',email:'tomas@mail.com',status:'Activo',last:'2026-08-29'},
+      {id:cid(),name:'Lucía Gómez',phone:'+54 9 11 5555-3333',email:'lucia@mail.com',status:'Inactivo',last:'2026-07-15'},
+      {id:cid(),name:'Martín Rossi',phone:'+54 9 11 5555-4444',email:'martin@mail.com',status:'Activo',last:'2026-09-01'}
+    ],
+    reviews:[
+      {id:cid(),name:'Carla',rating:5,comment:'Excelente comida y atención. Volvería sin dudas.',date:'2026-09-03',status:'Sin responder',reply:''},
+      {id:cid(),name:'Nico',rating:4,comment:'Muy buena experiencia, quizás un poco lento el servicio.',date:'2026-09-02',status:'Sin responder',reply:''},
+      {id:cid(),name:'Bruno Ibarra',rating:4,comment:'Muy buena onda del personal, un poco caro.',date:'2026-08-20',status:'Sin responder',reply:''}
+    ],
+    promotions:[
+      {id:cid(),name:'Bienvenida clientes nuevos',code:'BIENVENIDO20',discount:'20%',start:'2026-09-01',end:'2026-09-30',uses:64,status:'Activa'},
+      {id:cid(),name:'Viernes de pizza',code:'VIERNES2X1',discount:'2x1',start:'2026-09-01',end:'2026-09-30',uses:41,status:'Activa'},
+      {id:cid(),name:'Cyber semana',code:'CYBER15',discount:'15%',start:'2026-07-01',end:'2026-07-10',uses:120,status:'Finalizada'}
+    ],
+    tasks:[
+      {id:cid(),title:'Responder reseñas pendientes',description:'Contestar las 3 reseñas más recientes sin respuesta.',priority:'Alta',date:'2026-09-04',status:'Pendiente'},
+      {id:cid(),title:'Crear contenido para el viernes',description:'Post + story anunciando la promo 2x1.',priority:'Alta',date:'2026-09-05',status:'En progreso'},
+      {id:cid(),title:'Revisar campaña de Instagram',description:'Analizar performance de la semana y ajustar presupuesto.',priority:'Media',date:'2026-09-06',status:'Pendiente'},
+      {id:cid(),title:'Contactar clientes inactivos',description:'Enviar WhatsApp con promo especial a clientes inactivos.',priority:'Media',date:'2026-09-07',status:'Pendiente'},
+      {id:cid(),title:'Preparar promoción del fin de semana',description:'Definir descuento y piezas gráficas.',priority:'Baja',date:'2026-09-08',status:'Completada'}
+    ],
+    notifications:[
+      {id:cid(),text:'Tenés 3 reseñas pendientes.',time:'Hace 2h'},
+      {id:cid(),text:'Tu campaña de Instagram está funcionando muy bien.',time:'Hace 5h'},
+      {id:cid(),text:'Tu presupuesto mensual está cerca del límite.',time:'Ayer'},
+      {id:cid(),text:'Tenés contenido programado para mañana.',time:'Ayer'}
+    ],
+    meta:{monthLabel:'Septiembre 2026'}
+  };
+}
+let DB=null;
+function loadDB(){
+  try{ const raw=localStorage.getItem('mh_data'); DB=raw?JSON.parse(raw):buildDemoData(); if(!raw)saveDB(); }
+  catch(e){DB=buildDemoData();saveDB();}
+}
+function saveDB(){localStorage.setItem('mh_data',JSON.stringify(DB));}
+function resetDB(){DB=buildDemoData();saveDB();render();}
+let currentPage='dashboard';
+let dashboardPeriod='Este mes';
+let analyticsPeriod='Este mes';
+let chartRefs={};
+function destroyChart(key){if(chartRefs[key]){chartRefs[key].destroy();delete chartRefs[key];}}
+function money(n){return '$'+Math.round(n).toLocaleString('es-AR');}
+function esc(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
+function initials(name){return name.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();}
+function statusBadge(status){
+  const map={Activa:'success',Publicado:'success',Completada:'success','En progreso':'warning',Programado:'warning',Pendiente:'danger','Sin responder':'danger',Borrador:'neutral',Inactivo:'neutral',Finalizada:'neutral'};
+  return `<span class="badge ${map[status]||'neutral'}">${esc(status)}</span>`;
+}
+function priorityBadge(p){return `<span class="badge ${p==='Alta'?'danger':p==='Media'?'warning':'neutral'}">${esc(p)}</span>`;}
+function layout(content){
+  document.getElementById('view').innerHTML=content;
+  document.getElementById('business-name-top').textContent=DB.business.name;
+  document.getElementById('avatar').textContent=initials(DB.business.name);
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===currentPage));
+  const pending=DB.reviews.filter(x=>x.status==='Sin responder').length+DB.tasks.filter(x=>x.status!=='Completada').length;
+  document.getElementById('notification-dot').classList.toggle('hidden',pending===0);
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function navigate(page){currentPage=page;document.getElementById('sidebar').classList.remove('open');render();}
+function openModal(title,body,foot=''){
+  const box=document.getElementById('modal-box');
+  box.innerHTML=`<div class="modal-head"><h3>${title}</h3><button class="close-x" id="modal-close">×</button></div><div class="modal-body">${body}</div>${foot?`<div class="modal-foot">${foot}</div>`:''}`;
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-close').onclick=closeModal;
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function pageHead(kicker,title,sub,actions=''){return `<div class="page-head"><div><div class="eyebrow">${kicker}</div><h1>${title}</h1><div class="subtitle">${sub}</div></div><div class="actions">${actions}</div></div>`;}
+
+/* ================= DASHBOARD ================= */
+function dashboard(){
+  const spend=DB.campaigns.reduce((a,c)=>a+c.spent,0), sales=DB.campaigns.reduce((a,c)=>a+c.sales,0), queries=DB.campaigns.reduce((a,c)=>a+c.queries,0);
+  const roas=(sales*42/spend).toFixed(1), cps=(spend/sales).toFixed(0);
+  return pageHead('Resumen ejecutivo','Hola, '+esc(DB.business.name),'Todo lo importante de tu marketing en un solo lugar.',`<select id="dashboard-period" class="btn secondary"><option>Este mes</option><option>Mes anterior</option><option>Últimos 3 meses</option></select><button class="btn primary" id="quick-campaign">+ Nueva campaña</button>`)+
+  `<div class="grid kpis">
+    <div class="card kpi"><div class="kpi-top"><span>Inversión publicitaria</span><span class="kpi-icon">$</span></div><div class="kpi-value">${money(spend)}</div><div class="kpi-foot">+8,4% vs. período anterior</div></div>
+    <div class="card kpi"><div class="kpi-top"><span>Consultas generadas</span><span class="kpi-icon">⌁</span></div><div class="kpi-value">${queries}</div><div class="kpi-foot">+14,2% vs. período anterior</div></div>
+    <div class="card kpi"><div class="kpi-top"><span>Ventas atribuidas</span><span class="kpi-icon">✓</span></div><div class="kpi-value">${sales}</div><div class="kpi-foot">+11,7% vs. período anterior</div></div>
+    <div class="card kpi"><div class="kpi-top"><span>ROAS estimado</span><span class="kpi-icon">↗</span></div><div class="kpi-value">${roas}x</div><div class="kpi-foot">Costo por venta: ${money(Number(cps))}</div></div>
+  </div>
+  <div style="height:16px"></div>
+  <div class="grid two">
+    <div class="card chart-card"><div class="section-title"><div><h2>Rendimiento</h2><p>Ventas y consultas en el período seleccionado.</p></div></div><div class="chart-box"><canvas id="performance-chart"></canvas></div></div>
+    <div class="card chart-card"><div class="section-title"><div><h2>Distribución del presupuesto</h2><p>Cómo se está utilizando la inversión.</p></div></div><div class="chart-box"><canvas id="budget-chart"></canvas></div></div>
+  </div>
+  <div style="height:16px"></div>
+  <div class="grid two">
+    <div class="card"><div class="section-title"><div><h2>Acciones recomendadas</h2><p>Prioridades para mejorar resultados.</p></div></div><div class="list">
+      <div class="alert"><div>⚡</div><div><strong>Subí el presupuesto de Instagram un 10%</strong><p>La campaña de Promo 2x1 está por encima del promedio de conversión.</p></div></div>
+      <div class="alert"><div>★</div><div><strong>Respondé tus reseñas pendientes</strong><p>Tenés ${DB.reviews.filter(r=>r.status==='Sin responder').length} reseñas esperando respuesta.</p></div></div>
+      <div class="alert"><div>◷</div><div><strong>Prepará el contenido del fin de semana</strong><p>Hay una tarea de alta prioridad para mañana.</p></div></div>
+    </div></div>
+    <div class="card ai-box"><div class="section-title"><div><h2>Asistente de marketing</h2><p>Ideas accionables para tu negocio.</p></div><span class="badge success">DEMO</span></div><p class="subtitle" style="font-size:13px;color:var(--ink-700)">La IA puede ayudarte a convertir datos del negocio en campañas, copys, promociones y próximos pasos.</p><button class="btn primary" id="ai-campaign">Generar idea de campaña</button></div>
+  </div>
+  <div style="height:16px"></div>
+  <div class="card"><div class="section-title"><div><h2>Próximas tareas</h2><p>Lo que conviene resolver primero.</p></div><button class="btn secondary" id="go-tasks">Ver todas</button></div>${taskList(DB.tasks.filter(t=>t.status!=='Completada').slice(0,4))}</div>`;
+}
+function renderDashboardCharts(){
+  destroyChart('performance');destroyChart('budget');
+  const p=document.getElementById('performance-chart'); if(!p)return;
+  chartRefs.performance=new Chart(p,{type:'line',data:{labels:['Sem 1','Sem 2','Sem 3','Sem 4'],datasets:[{label:'Ventas',data:[21,32,37,56],borderWidth:3,tension:.35},{label:'Consultas',data:[62,78,92,148],borderWidth:2,tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,grid:{color:'#ECECF4'}},x:{grid:{display:false}}}}});
+  const b=document.getElementById('budget-chart');
+  chartRefs.budget=new Chart(b,{type:'doughnut',data:{labels:['Instagram','Facebook','Google','Disponible'],datasets:[{data:[62400,31400,28400,27700],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom'}}}});
+}
+
+/* ================= ADS ================= */
+function ads(){return pageHead('Adquisición','Publicidad','Administrá campañas y controlá cuánto invertís.',`<button class="btn primary" id="new-campaign">+ Nueva campaña</button>`)+`<div class="grid three">${DB.campaigns.map(c=>`<div class="card"><div class="section-title"><div><h3>${esc(c.name)}</h3><p>${esc(c.platform)} · ${esc(c.objective)}</p></div>${statusBadge(c.status)}</div><div style="font-size:23px;font-family:Sora;font-weight:800">${money(c.spent)}</div><div class="subtitle">de ${money(c.budget)} de presupuesto</div><div class="progress"><span style="width:${Math.min(100,c.spent/c.budget*100)}%"></span></div><div style="display:flex;justify-content:space-between;margin-top:13px;font-size:11px;color:var(--ink-500)"><span>${c.queries} consultas</span><strong>${c.sales} ventas</strong></div><div style="display:flex;gap:7px;margin-top:15px"><button class="btn secondary" data-edit-campaign="${c.id}">Editar</button><button class="btn danger" data-delete-campaign="${c.id}">Eliminar</button></div></div>`).join('')}</div><div style="height:16px"></div><div class="card"><div class="section-title"><div><h2>Detalle de campañas</h2><p>Resumen operativo de tus anuncios.</p></div></div>${campaignTable()}</div>`;}
+function campaignTable(){return `<div class="table-wrap"><table><thead><tr><th>Campaña</th><th>Plataforma</th><th>Objetivo</th><th>Presupuesto</th><th>Gastado</th><th>Consultas</th><th>Ventas</th><th>Estado</th></tr></thead><tbody>${DB.campaigns.map(c=>`<tr><td><strong>${esc(c.name)}</strong></td><td>${esc(c.platform)}</td><td>${esc(c.objective)}</td><td>${money(c.budget)}</td><td>${money(c.spent)}</td><td>${c.queries}</td><td>${c.sales}</td><td>${statusBadge(c.status)}</td></tr>`).join('')}</tbody></table></div>`;}
+function campaignModal(id){const c=id?DB.campaigns.find(x=>x.id===id):null;openModal(c?'Editar campaña':'Nueva campaña',`<form id="campaign-form"><div class="form-grid"><div class="field"><label>Nombre</label><input name="name" required value="${esc(c?.name||'')}" placeholder="Ej. Promo septiembre"></div><div class="field"><label>Plataforma</label><select name="platform"><option ${c?.platform==='Instagram'?'selected':''}>Instagram</option><option ${c?.platform==='Facebook'?'selected':''}>Facebook</option><option ${c?.platform==='Google'?'selected':''}>Google</option></select></div><div class="field"><label>Objetivo</label><select name="objective"><option>Ventas</option><option ${c?.objective==='Alcance'?'selected':''}>Alcance</option><option ${c?.objective==='Consultas'?'selected':''}>Consultas</option></select></div><div class="field"><label>Presupuesto</label><input type="number" name="budget" min="0" required value="${c?.budget||''}"></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-campaign">Guardar campaña</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('save-campaign').onclick=()=>{const f=new FormData(document.getElementById('campaign-form'));if(c){Object.assign(c,{name:f.get('name'),platform:f.get('platform'),objective:f.get('objective'),budget:Number(f.get('budget'))});}else{DB.campaigns.push({id:cid(),name:f.get('name'),platform:f.get('platform'),objective:f.get('objective'),budget:Number(f.get('budget')),spent:0,sales:0,queries:0,status:'Activa'});}saveDB();closeModal();render();};}
+
+/* ================= CONTENT ================= */
+function content(){return pageHead('Contenido','Contenido','Planificá, generá y ordená tus publicaciones.',`<button class="btn secondary" id="content-ai">✦ Generar contenido</button><button class="btn primary" id="new-content">+ Nuevo contenido</button>`)+`<div class="card"><div class="section-title"><div><h2>Calendario editorial</h2><p>Tu contenido próximo, ordenado por fecha.</p></div></div>${calendar()}</div><div style="height:16px"></div><div class="card"><div class="section-title"><div><h2>Piezas de contenido</h2><p>Administrá títulos, formatos y estados.</p></div></div>${contentTable()}</div>`;}
+function calendar(){const days=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];let html=days.map(d=>`<div class="calendar-head">${d}</div>`).join('');for(let i=1;i<=30;i++){const date=`2026-09-${String(i).padStart(2,'0')}`;const items=DB.content.filter(x=>x.date===date);html+=`<div class="calendar-day"><div class="day-num">${i}</div>${items.map(x=>`<div class="event">${esc(x.title)}</div>`).join('')}</div>`;}return `<div class="calendar">${html}</div>`;}
+function contentTable(){return `<div class="table-wrap"><table><thead><tr><th>Contenido</th><th>Fecha</th><th>Plataforma</th><th>Formato</th><th>Estado</th><th></th></tr></thead><tbody>${DB.content.map(c=>`<tr><td><strong>${esc(c.title)}</strong></td><td>${c.date}</td><td>${esc(c.platform)}</td><td>${esc(c.format)}</td><td>${statusBadge(c.status)}</td><td><button class="btn danger" data-delete-content="${c.id}">Eliminar</button></td></tr>`).join('')}</tbody></table></div>`;}
+function contentModal(){openModal('Nuevo contenido',`<form id="content-form"><div class="form-grid"><div class="field full"><label>Título</label><input name="title" required placeholder="Ej. Promo de viernes"></div><div class="field"><label>Fecha</label><input name="date" type="date" required value="2026-09-10"></div><div class="field"><label>Plataforma</label><select name="platform"><option>Instagram</option><option>Facebook</option><option>WhatsApp</option><option>TikTok</option></select></div><div class="field"><label>Formato</label><select name="format"><option>Post</option><option>Reel</option><option>Story</option><option>Mensaje</option></select></div><div class="field"><label>Estado</label><select name="status"><option>Borrador</option><option>Programado</option><option>Publicado</option></select></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-content">Guardar</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('save-content').onclick=()=>{const f=new FormData(document.getElementById('content-form'));DB.content.push({id:cid(),title:f.get('title'),date:f.get('date'),platform:f.get('platform'),format:f.get('format'),status:f.get('status')});saveDB();closeModal();render();};}
+function contentGenerator(){openModal('Generador de contenido',`<div class="field"><label>Objetivo</label><select id="gen-objective"><option>Conseguir reservas</option><option>Vender una promoción</option><option>Ganar seguidores</option><option>Reactivar clientes</option></select></div><div style="height:12px"></div><div class="card ai-box" id="generated-copy"><h3>Listo para generar</h3><p class="subtitle">Elegí un objetivo y generá una propuesta rápida.</p></div>`,`<button class="btn secondary" id="cancel-modal">Cerrar</button><button class="btn primary" id="generate-copy">Generar</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('generate-copy').onclick=()=>{const o=document.getElementById('gen-objective').value;document.getElementById('generated-copy').innerHTML=`<h3>HOOK</h3><p style="margin-top:7px;font-size:13px;font-weight:700">${o==='Conseguir reservas'?'¿Todavía no tenés mesa para este viernes?':o==='Vender una promoción'?'Este viernes hay una excusa más para venir.':'Tu próximo post puede convertir más.'}</p><h3 style="margin-top:16px">COPY</h3><p class="subtitle">Vení a ${esc(DB.business.name)} y disfrutá una experiencia pensada para que quieras volver. Reservá hoy y aprovechá nuestra propuesta especial.</p><h3 style="margin-top:16px">CTA</h3><p class="subtitle">Reservá por WhatsApp y asegurá tu lugar.</p><h3 style="margin-top:16px">STORY / REEL</h3><p class="subtitle">Mostrá 3 planos: producto, ambiente y cliente feliz. Cerrá con el beneficio y el CTA.</p>`;};}
+
+/* ================= CUSTOMERS ================= */
+function customers(){return pageHead('CRM','Clientes','Conocé a tus clientes y detectá oportunidades de reactivación.',`<button class="btn primary" id="new-customer">+ Nuevo cliente</button>`)+`<div class="grid three"><div class="card"><div class="kpi-top">Clientes activos</div><div class="kpi-value">${DB.customers.filter(c=>c.status==='Activo').length}</div><div class="subtitle">con actividad reciente</div></div><div class="card"><div class="kpi-top">Clientes inactivos</div><div class="kpi-value">${DB.customers.filter(c=>c.status==='Inactivo').length}</div><div class="subtitle">para reactivar</div></div><div class="card"><div class="kpi-top">Base total</div><div class="kpi-value">${DB.customers.length}</div><div class="subtitle">registros en el CRM demo</div></div></div><div style="height:16px"></div><div class="card">${customerTable()}</div>`;}
+function customerTable(){return `<div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Estado</th><th>Última actividad</th><th></th></tr></thead><tbody>${DB.customers.map(c=>`<tr><td><strong>${esc(c.name)}</strong></td><td>${esc(c.phone)}</td><td>${esc(c.email)}</td><td>${statusBadge(c.status)}</td><td>${c.last}</td><td><button class="btn secondary" data-contact="${c.id}">Contactar</button></td></tr>`).join('')}</tbody></table></div>`;}
+function customerModal(){openModal('Nuevo cliente',`<form id="customer-form"><div class="form-grid"><div class="field"><label>Nombre</label><input name="name" required></div><div class="field"><label>Teléfono</label><input name="phone"></div><div class="field"><label>Email</label><input name="email" type="email"></div><div class="field"><label>Estado</label><select name="status"><option>Activo</option><option>Inactivo</option></select></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-customer">Guardar</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('save-customer').onclick=()=>{const f=new FormData(document.getElementById('customer-form'));DB.customers.push({id:cid(),name:f.get('name'),phone:f.get('phone'),email:f.get('email'),status:f.get('status'),last:new Date().toISOString().slice(0,10)});saveDB();closeModal();render();};}
+
+/* ================= REVIEWS ================= */
+function reviews(){const avg=(DB.reviews.reduce((a,r)=>a+r.rating,0)/Math.max(DB.reviews.length,1)).toFixed(1);return pageHead('Reputación','Reseñas','Respondé rápido y cuidá la reputación de tu negocio.')+`<div class="grid three"><div class="card"><div class="kpi-top">Rating promedio</div><div class="kpi-value">${avg} ★</div><div class="subtitle">sobre ${DB.reviews.length} reseñas demo</div></div><div class="card"><div class="kpi-top">Sin responder</div><div class="kpi-value">${DB.reviews.filter(r=>r.status==='Sin responder').length}</div><div class="subtitle">conviene responder hoy</div></div><div class="card ai-box"><div class="kpi-top">Respuesta asistida</div><div class="subtitle" style="margin-top:12px;color:var(--ink-700)">Generá una respuesta amable en segundos.</div><button class="btn primary" id="review-ai" style="margin-top:12px">Generar respuestas</button></div></div><div style="height:16px"></div><div class="card"><div class="list">${DB.reviews.map(r=>`<div class="list-item"><div class="list-main"><strong>${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)} · ${esc(r.name)}</strong><small>${esc(r.comment)}<br>${r.date}</small>${r.reply?`<div class="subtitle" style="margin-top:8px"><b>Respuesta:</b> ${esc(r.reply)}</div>`:''}</div><div><button class="btn ${r.status==='Sin responder'?'primary':'secondary'}" data-review="${r.id}">${r.status==='Sin responder'?'Responder':'Ver respuesta'}</button></div></div>`).join('')}</div></div>`;}
+function reviewModal(id){const r=DB.reviews.find(x=>x.id===id);const suggested=`¡Gracias por tu comentario, ${r.name}! Nos alegra mucho saber que disfrutaste la experiencia. Tomamos tu observación para seguir mejorando y esperamos verte nuevamente pronto.`;openModal('Responder reseña',`<div class="card ai-box"><strong>Sugerencia</strong><p class="subtitle">${suggested}</p><button class="btn secondary" id="use-suggestion" style="margin-top:10px">Usar sugerencia</button></div><div style="height:12px"></div><div class="field"><label>Respuesta</label><textarea id="review-reply">${esc(r.reply)}</textarea></div>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-review">Guardar respuesta</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('use-suggestion').onclick=()=>document.getElementById('review-reply').value=suggested;document.getElementById('save-review').onclick=()=>{r.reply=document.getElementById('review-reply').value;r.status='Respondida';saveDB();closeModal();render();};}
+
+/* ================= PROMOS ================= */
+function promos(){return pageHead('Conversión','Promociones','Creá ofertas y seguí su uso.',`<button class="btn primary" id="new-promo">+ Nueva promoción</button>`)+`<div class="grid three">${DB.promotions.map(p=>`<div class="card"><div class="section-title"><div><h3>${esc(p.name)}</h3><p>Código ${esc(p.code)}</p></div>${statusBadge(p.status)}</div><div style="font-size:24px;font-family:Sora;font-weight:800">${esc(p.discount)}</div><div class="subtitle">${p.start} → ${p.end}</div><div style="margin-top:14px;font-size:12px;color:var(--ink-500)"><b style="color:var(--ink-900)">${p.uses}</b> usos registrados</div><div style="display:flex;gap:7px;margin-top:15px"><button class="btn secondary" data-copy-promo="${p.code}">Copiar código</button><button class="btn danger" data-delete-promo="${p.id}">Eliminar</button></div></div>`).join('')}</div>`;}
+function promoModal(){openModal('Nueva promoción',`<form id="promo-form"><div class="form-grid"><div class="field"><label>Nombre</label><input name="name" required placeholder="Ej. 15% primera compra"></div><div class="field"><label>Código</label><input name="code" required placeholder="PRIMERA15"></div><div class="field"><label>Descuento</label><input name="discount" required placeholder="15% / 2x1"></div><div class="field"><label>Inicio</label><input name="start" type="date" required></div><div class="field"><label>Fin</label><input name="end" type="date" required></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-promo">Guardar</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('save-promo').onclick=()=>{const f=new FormData(document.getElementById('promo-form'));DB.promotions.push({id:cid(),name:f.get('name'),code:f.get('code').toUpperCase(),discount:f.get('discount'),start:f.get('start'),end:f.get('end'),uses:0,status:'Activa'});saveDB();closeModal();render();};}
+
+/* ================= ANALYTICS ================= */
+function analytics(){const spend=DB.campaigns.reduce((a,c)=>a+c.spent,0), sales=DB.campaigns.reduce((a,c)=>a+c.sales,0);return pageHead('Performance','Analytics','Entendé qué está funcionando y dónde ajustar.',`<select id="analytics-period" class="btn secondary"><option>Este mes</option><option>Mes anterior</option><option>Últimos 3 meses</option></select>`)+`<div class="grid three"><div class="card"><div class="kpi-top">ROAS</div><div class="kpi-value">${(sales*42/spend).toFixed(1)}x</div><div class="subtitle">retorno estimado sobre publicidad</div></div><div class="card"><div class="kpi-top">Costo por venta</div><div class="kpi-value">${money(spend/sales)}</div><div class="subtitle">promedio de todas las campañas</div></div><div class="card"><div class="kpi-top">Conversión consultas → ventas</div><div class="kpi-value">${(sales/DB.campaigns.reduce((a,c)=>a+c.queries,0)*100).toFixed(1)}%</div><div class="subtitle">sobre consultas atribuidas</div></div></div><div style="height:16px"></div><div class="grid two"><div class="card chart-card"><div class="section-title"><div><h2>Ventas por canal</h2><p>Comparativa del período.</p></div></div><div class="chart-box"><canvas id="channel-chart"></canvas></div></div><div class="card"><div class="section-title"><div><h2>Lecturas rápidas</h2><p>Qué haría primero.</p></div></div><div class="list"><div class="alert"><div>1</div><div><strong>Instagram lidera</strong><p>Concentrá creatividad y presupuesto en la campaña de mejor conversión.</p></div></div><div class="alert"><div>2</div><div><strong>Google captura intención</strong><p>Usalo para búsquedas de alta intención y reservas.</p></div></div><div class="alert"><div>3</div><div><strong>Medí ventas reales</strong><p>En producción, conectá un POS o e-commerce para reemplazar estimaciones.</p></div></div></div></div></div>`;}
+function renderAnalyticsCharts(){destroyChart('channel');const c=document.getElementById('channel-chart');if(!c)return;chartRefs.channel=new Chart(c,{type:'bar',data:{labels:DB.campaigns.map(x=>x.platform),datasets:[{label:'Ventas',data:DB.campaigns.map(x=>x.sales),borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});}
+
+/* ================= TASKS ================= */
+function taskList(arr){if(!arr.length)return '<div class="empty">No hay tareas pendientes.</div>';return `<div class="list">${arr.map(t=>`<div class="list-item"><div class="list-main"><strong>${esc(t.title)}</strong><small>${esc(t.description)}<br>${t.date} · ${priorityBadge(t.priority)}</small></div><button class="btn ${t.status==='Completada'?'secondary':'success'}" data-toggle-task="${t.id}">${t.status==='Completada'?'Reabrir':'Completar'}</button></div>`).join('')}</div>`;}
+function tasks(){return pageHead('Operación','Tareas','Convertí tus prioridades en acciones concretas.',`<button class="btn primary" id="new-task">+ Nueva tarea</button>`)+`<div class="card"><div class="section-title"><div><h2>Backlog</h2><p>${DB.tasks.filter(t=>t.status!=='Completada').length} tareas abiertas.</p></div></div>${taskList(DB.tasks)}</div>`;}
+function taskModal(){openModal('Nueva tarea',`<form id="task-form"><div class="form-grid"><div class="field full"><label>Título</label><input name="title" required></div><div class="field full"><label>Descripción</label><textarea name="description"></textarea></div><div class="field"><label>Prioridad</label><select name="priority"><option>Alta</option><option>Media</option><option>Baja</option></select></div><div class="field"><label>Fecha</label><input name="date" type="date" required></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-task">Guardar</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('save-task').onclick=()=>{const f=new FormData(document.getElementById('task-form'));DB.tasks.push({id:cid(),title:f.get('title'),description:f.get('description'),priority:f.get('priority'),date:f.get('date'),status:'Pendiente'});saveDB();closeModal();render();};}
+
+/* ================= REPORTS ================= */
+function reports(){return pageHead('Reporting','Reportes','Exportá una foto del estado de tu marketing.',`<button class="btn primary" id="export-csv">Exportar CSV</button><button class="btn secondary" id="print-report">Imprimir</button>`)+`<div class="grid two"><div class="card"><h2>Resumen ejecutivo</h2><p class="subtitle">Período: ${DB.meta.monthLabel}</p><div class="list" style="margin-top:14px"><div class="list-item"><div class="list-main"><strong>Inversión</strong><small>Gasto publicitario acumulado</small></div><b>${money(DB.campaigns.reduce((a,c)=>a+c.spent,0))}</b></div><div class="list-item"><div class="list-main"><strong>Ventas</strong><small>Ventas atribuidas a campañas</small></div><b>${DB.campaigns.reduce((a,c)=>a+c.sales,0)}</b></div><div class="list-item"><div class="list-main"><strong>Consultas</strong><small>Consultas generadas</small></div><b>${DB.campaigns.reduce((a,c)=>a+c.queries,0)}</b></div></div></div><div class="card ai-box"><h2>Reporte para cliente</h2><p class="subtitle">En una versión productiva, este módulo puede generar automáticamente un PDF mensual con resultados, explicación y próximos pasos.</p><button class="btn primary" id="report-ai">Generar resumen</button></div></div><div style="height:16px"></div><div class="card"><h2>Campañas</h2><div style="height:12px"></div>${campaignTable()}</div>`;}
+function exportCSV(){const rows=[['Campaña','Plataforma','Objetivo','Presupuesto','Gastado','Consultas','Ventas','Estado'],...DB.campaigns.map(c=>[c.name,c.platform,c.objective,c.budget,c.spent,c.queries,c.sales,c.status])];const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='marketing-hub-reporte.csv';a.click();URL.revokeObjectURL(a.href);}
+
+/* ================= SETTINGS ================= */
+function settings(){return pageHead('Workspace','Configuración','Personalizá el negocio y prepará futuras conexiones.')+`<div class="grid two"><div class="card"><div class="section-title"><div><h2>Datos del negocio</h2><p>Se guardan localmente en esta demo.</p></div></div><form id="settings-form"><div class="form-grid"><div class="field"><label>Nombre</label><input name="name" value="${esc(DB.business.name)}"></div><div class="field"><label>Categoría</label><input name="category" value="${esc(DB.business.category)}"></div><div class="field"><label>Presupuesto mensual</label><input name="budget" type="number" value="${DB.business.budget}"></div><div class="field"><label>Teléfono</label><input name="phone" value="${esc(DB.business.phone)}"></div><div class="field full"><label>Dirección</label><input name="address" value="${esc(DB.business.address)}"></div><div class="field"><label>Instagram</label><input name="instagram" value="${esc(DB.business.instagram)}"></div><div class="field"><label>WhatsApp</label><input name="whatsapp" value="${esc(DB.business.whatsapp)}"></div></div><button class="btn primary" style="margin-top:15px" id="save-settings">Guardar cambios</button></form></div><div class="card"><div class="section-title"><div><h2>Conexiones</h2><p>Arquitectura preparada para integraciones reales.</p></div></div>${integration('Google Business Profile','Reseñas, perfil y presencia local','CONECTADO · DEMO','GB')}${integration('Meta Ads','Campañas, gasto y conversiones','CONECTADO · DEMO','M')}${integration('Google Ads','Campañas y conversiones','NO CONECTADO','G')}${integration('Instagram / Facebook','Contenido y métricas','NO CONECTADO','IG')}${integration('WhatsApp Business','Mensajes y atención','NO CONECTADO','W')}${integration('POS / E-commerce','Ventas y clientes reales','NO CONECTADO','POS')}<div class="alert" style="margin-top:14px"><div>🔒</div><div><strong>Arquitectura recomendada</strong><p>Frontend → Backend seguro → Base de datos + APIs + IA. Los tokens nunca deben vivir en este HTML.</p></div></div></div></div>`;}
+function integration(name,desc,status,logo){return `<div class="integration"><div class="integration-info"><div class="integration-logo">${logo}</div><div><h3>${name}</h3><p>${desc}</p></div></div><div style="display:flex;align-items:center;gap:8px"><span class="connection ${status.startsWith('NO')?'off':''}">${status}</span><button class="btn secondary" data-connect="${esc(name)}">${status.startsWith('NO')?'Conectar':'Sincronizar'}</button></div></div>`;}
+
+/* ================= NOTIFICATIONS / SEARCH ================= */
+function notifications(){openModal('Notificaciones',`<div class="list">${DB.notifications.map(n=>`<div class="list-item"><div class="list-main"><strong>${esc(n.text)}</strong><small>${esc(n.time)}</small></div></div>`).join('')}</div>`,'<button class="btn secondary" id="cancel-modal">Cerrar</button>');document.getElementById('cancel-modal').onclick=closeModal;}
+function globalSearch(q){const box=document.getElementById('search-results');if(!q.trim()){box.classList.add('hidden');return;}const groups=[['Campañas',DB.campaigns.filter(x=>x.name.toLowerCase().includes(q.toLowerCase())), 'ads',x=>x.name],['Clientes',DB.customers.filter(x=>x.name.toLowerCase().includes(q.toLowerCase())), 'customers',x=>x.name],['Contenido',DB.content.filter(x=>x.title.toLowerCase().includes(q.toLowerCase())), 'content',x=>x.title],['Promociones',DB.promotions.filter(x=>x.name.toLowerCase().includes(q.toLowerCase())||x.code.toLowerCase().includes(q.toLowerCase())), 'promos',x=>x.name],['Tareas',DB.tasks.filter(x=>x.title.toLowerCase().includes(q.toLowerCase())), 'tasks',x=>x.title]];let html='';groups.forEach(([label,arr,page,get])=>{if(arr.length){html+=`<div class="sr-group">${label}</div>`;arr.slice(0,4).forEach(item=>html+=`<div class="sr-item" data-page="${page}">${esc(get(item))} →</div>`);}});if(!html)html='<div class="search-empty">Sin resultados.</div>';box.innerHTML=html;box.classList.remove('hidden');box.querySelectorAll('.sr-item').forEach(x=>x.onclick=()=>{navigate(x.dataset.page);box.classList.add('hidden');document.getElementById('global-search').value='';});}
+
+/* ================= EVENT BINDING ================= */
+function bind(){
+  document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>navigate(b.dataset.page));
+  document.getElementById('mobile-menu').onclick=()=>document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('notification-btn').onclick=notifications;
+  document.getElementById('global-search').oninput=e=>globalSearch(e.target.value);
+  document.getElementById('demo-reset').onclick=()=>{if(confirm('¿Reiniciar todos los datos demo?'))resetDB();};
+  document.getElementById('logout').onclick=()=>alert('En esta versión demo la sesión es local. En producción se conectará a autenticación real.');
+  const q=(id,fn)=>{const el=document.getElementById(id);if(el)el.onclick=fn;};
+  q('quick-campaign',()=>campaignModal());q('new-campaign',()=>campaignModal());q('new-content',contentModal);q('content-ai',contentGenerator);q('new-customer',customerModal);q('new-promo',promoModal);q('new-task',taskModal);q('export-csv',exportCSV);q('print-report',()=>window.print());q('ai-campaign',()=>openModal('Idea de campaña','<div class="card ai-box"><h3>“Viernes de mesa completa”</h3><p class="subtitle">Campaña local de 5 días: video corto del plato estrella + prueba social + CTA a WhatsApp. Segmento: personas de 2–5 km alrededor del local.</p><div style="height:12px"></div><b>Oferta:</b> 2x1 en el segundo plato los viernes.<br><br><b>CTA:</b> Reservá antes de las 19:00.</div>','<button class="btn secondary" id="cancel-modal">Cerrar</button>'));q('go-tasks',()=>navigate('tasks'));q('review-ai',()=>alert('En producción, esta acción llamará a un modelo de IA para generar respuestas con contexto de cada reseña.'));q('report-ai',()=>alert('En producción, este módulo puede generar automáticamente un reporte mensual con explicación de resultados y próximos pasos.'));
+  q('save-settings',e=>{e.preventDefault();const f=new FormData(document.getElementById('settings-form'));Object.assign(DB.business,{name:f.get('name'),category:f.get('category'),budget:Number(f.get('budget')),phone:f.get('phone'),address:f.get('address'),instagram:f.get('instagram'),whatsapp:f.get('whatsapp')});saveDB();render();});
+  const dp=document.getElementById('dashboard-period');if(dp)dp.onchange=e=>{dashboardPeriod=e.target.value;render();};
+  const ap=document.getElementById('analytics-period');if(ap)ap.onchange=e=>{analyticsPeriod=e.target.value;render();};
+  document.querySelectorAll('[data-edit-campaign]').forEach(x=>x.onclick=()=>campaignModal(x.dataset.editCampaign));
+  document.querySelectorAll('[data-delete-campaign]').forEach(x=>x.onclick=()=>{DB.campaigns=DB.campaigns.filter(c=>c.id!==x.dataset.deleteCampaign);saveDB();render();});
+  document.querySelectorAll('[data-delete-content]').forEach(x=>x.onclick=()=>{DB.content=DB.content.filter(c=>c.id!==x.dataset.deleteContent);saveDB();render();});
+  document.querySelectorAll('[data-contact]').forEach(x=>x.onclick=()=>{const c=DB.customers.find(c=>c.id===x.dataset.contact);alert(`Contacto demo: ${c.name}\nWhatsApp: ${c.phone}`);});
+  document.querySelectorAll('[data-review]').forEach(x=>x.onclick=()=>reviewModal(x.dataset.review));
+  document.querySelectorAll('[data-delete-promo]').forEach(x=>x.onclick=()=>{DB.promotions=DB.promotions.filter(p=>p.id!==x.dataset.deletePromo);saveDB();render();});
+  document.querySelectorAll('[data-copy-promo]').forEach(x=>x.onclick=async()=>{try{await navigator.clipboard.writeText(x.dataset.copyPromo);alert('Código copiado: '+x.dataset.copyPromo);}catch(e){alert('Código: '+x.dataset.copyPromo);}});
+  document.querySelectorAll('[data-toggle-task]').forEach(x=>x.onclick=()=>{const t=DB.tasks.find(t=>t.id===x.dataset.toggleTask);t.status=t.status==='Completada'?'Pendiente':'Completada';saveDB();render();});
+  document.querySelectorAll('[data-connect]').forEach(x=>x.onclick=()=>alert(`${x.dataset.connect}: en producción se abrirá OAuth y la conexión segura pasará por el backend.`));
+}
+function render(){
+  loadDB();
+  let html='';
+  if(currentPage==='dashboard')html=dashboard();
+  else if(currentPage==='ads')html=ads();
+  else if(currentPage==='content')html=content();
+  else if(currentPage==='customers')html=customers();
+  else if(currentPage==='reviews')html=reviews();
+  else if(currentPage==='promos')html=promos();
+  else if(currentPage==='analytics')html=analytics();
+  else if(currentPage==='tasks')html=tasks();
+  else if(currentPage==='reports')html=reports();
+  else if(currentPage==='settings')html=settings();
+  layout(html);bind();
+  if(currentPage==='dashboard')renderDashboardCharts();
+  if(currentPage==='analytics')renderAnalyticsCharts();
+}
+
+document.getElementById('modal-overlay').onclick=e=>{if(e.target.id==='modal-overlay')closeModal();};
+render();
+</script>
+</body>
+</html>
