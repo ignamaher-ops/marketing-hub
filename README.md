@@ -1,86 +1,38 @@
 # Marketing Hub
 
-SaaS-style marketing dashboard for small businesses: restaurants, cafes, barbers, clothing stores and other local businesses.
+SaaS base para gestionar marketing de pequeños negocios. Esta versión reemplaza el login demo y el `localStorage` del prototipo por autenticación real, sesiones persistidas y PostgreSQL multi-tenant por empresa.
 
-## Current version
+## Estado de esta versión
 
-The repository contains a self-contained frontend MVP in `index.html`.
+- Frontend web funcional: dashboard, campañas, contenido, clientes, reseñas, promociones y configuración.
+- Backend Express 5.
+- PostgreSQL con aislamiento por `business_id`.
+- Registro e inicio de sesión con contraseñas hasheadas con bcrypt.
+- Sesiones persistidas en PostgreSQL.
+- Protección CSRF para formularios.
+- Helmet, rate limiting del login, cookies HttpOnly/SameSite/Secure en producción y límites de body.
+- Health check en `/health`.
+- Docker + PostgreSQL local.
+- CI de sintaxis con GitHub Actions.
+- Configuración base para Render.
 
-### Included in the MVP
+## Desarrollo local
 
-- Dashboard with marketing KPIs
-- Advertising/campaign management
-- Content calendar
-- Content generator demo
-- CRM / customers
-- Reviews and assisted responses
-- Promotions
-- Analytics
-- Tasks
-- Reports + CSV export
-- Business configuration
-- Global search
-- Notifications
-- Responsive mobile layout
-- Demo persistence with `localStorage`
-- Integration area prepared for Google Business Profile, Meta Ads, Google Ads, Instagram/Facebook, WhatsApp Business and POS/e-commerce
+1. Copiar `.env.example` a `.env`.
+2. Ejecutar `docker compose up --build`.
+3. Abrir `http://localhost:3000`.
+4. Con `SEED_DEMO=true` se crea el usuario demo `demo@marketinghub.local` con contraseña `MarketingHubDemo!2026`.
 
-## Run locally
+En producción usar `SEED_DEMO=false` y secretos reales.
 
-No build step is required.
+## Producción
 
-Open `index.html` in a browser, or serve the repository with any static web server.
+Configurar `DATABASE_URL`, `SESSION_SECRET` de 32+ caracteres aleatorios, `NODE_ENV=production` y `SEED_DEMO=false`. `render.yaml` deja preparado el servicio web, pero todavía requiere crear/conectar PostgreSQL administrado y cargar los secretos del proveedor.
 
-Example:
+## Integraciones
 
-```bash
-python -m http.server 8000
-```
+Meta/Instagram, Google Business, WhatsApp, OpenAI y billing todavía requieren credenciales, OAuth/webhooks y pruebas con cuentas reales. No se consideran conectadas por el hecho de existir una interfaz. Los tokens deben permanecer en backend/secret manager.
 
-Then open `http://localhost:8000`.
+## Próximo paso para lanzamiento
 
-## Important MVP limitation
-
-This is currently a frontend/demo product. Authentication, database persistence, real advertising APIs, real social publishing, WhatsApp messaging, POS/e-commerce sales attribution and production AI are not connected yet.
-
-The UI intentionally keeps external credentials out of the browser. Production integrations should follow:
-
-```text
-Marketing Hub frontend
-        |
-        v
-     Backend
-        |
-  +-----+-----+
-  |     |     |
- DB   APIs    AI
-```
-
-OAuth tokens and API secrets must remain on the backend.
-
-## Recommended production stack
-
-- Frontend: Next.js / React
-- Backend: Node.js
-- Database: PostgreSQL / Supabase
-- Hosting: Vercel + Railway/Render/Supabase
-- Authentication: secure session-based auth or managed auth provider
-- AI: OpenAI API through the backend
-- Payments: Stripe or Mercado Pago
-
-## Production roadmap
-
-1. Backend + PostgreSQL + real authentication
-2. Multi-business / workspace model
-3. Google Business Profile integration
-4. Meta / Instagram / Facebook integration
-5. Meta Ads integration
-6. Real AI content and recommendations
-7. Google Ads integration
-8. WhatsApp Business integration
-9. POS / Shopify / WooCommerce integrations
-10. Automated reports, alerts, billing and subscriptions
-
-## Repository
-
-`ignamaher-ops/marketing-hub`
+Completar y validar despliegue real + PostgreSQL administrado + dominio/HTTPS + OAuth de las fuentes principales + billing si el modelo comercial lo requiere + pruebas end-to-end con cuentas reales.
