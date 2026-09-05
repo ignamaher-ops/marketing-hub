@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: marketing-hub
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: SEED_DEMO
+        value: "false"
