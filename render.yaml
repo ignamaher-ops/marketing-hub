@@ -2,11 +2,13 @@ databases:
   - name: marketing-hub-db
     databaseName: marketing_hub
     user: marketing_hub
+    plan: free
 
 services:
   - type: web
     name: marketing-hub
     runtime: node
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
