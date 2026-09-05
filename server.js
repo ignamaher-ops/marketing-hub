@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const { pool, initDb, seedDemo } = require('./db');
 
@@ -17,6 +18,10 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const isProduction = process.env.NODE_ENV === 'production';
+const indexHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const appHtml = indexHtml.includes('/auth-bridge.js')
+  ? indexHtml
+  : indexHtml.replace('</body>', '<script src="/auth-bridge.js"></script>\n</body>');
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -116,24 +121,17 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(409).json({ error: 'Email already registered' });
     }
-
     const passwordHash = await bcrypt.hash(String(password), 12);
     const user = (await client.query(
       'INSERT INTO users(email, password_hash, name) VALUES($1,$2,$3) RETURNING id,email,name',
       [normalizedEmail, passwordHash, String(name).trim()]
     )).rows[0];
-
     const business = (await client.query(
       'INSERT INTO businesses(name, category) VALUES($1,$2) RETURNING id,name,category',
       [String(businessName).trim(), String(category || 'Negocio').trim()]
     )).rows[0];
-
-    await client.query(
-      'INSERT INTO memberships(user_id, business_id, role) VALUES($1,$2,$3)',
-      [user.id, business.id, 'owner']
-    );
+    await client.query('INSERT INTO memberships(user_id, business_id, role) VALUES($1,$2,$3)', [user.id, business.id, 'owner']);
     await client.query('COMMIT');
-
     await new Promise((resolve, reject) => req.session.regenerate(err => err ? reject(err) : resolve()));
     req.session.user = { id: user.id, email: user.email, name: user.name, businessId: business.id };
     req.session.csrf = crypto.randomBytes(32).toString('hex');
@@ -150,20 +148,14 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 app.post('/api/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
-
   try {
-    const userResult = await pool.query(
-      'SELECT id,email,name,password_hash FROM users WHERE email = $1',
-      [String(email).trim().toLowerCase()]
-    );
+    const userResult = await pool.query('SELECT id,email,name,password_hash FROM users WHERE email = $1', [String(email).trim().toLowerCase()]);
     const user = userResult.rows[0];
     if (!user || !(await bcrypt.compare(String(password), user.password_hash))) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-
     const workspace = await getUserWorkspace(user.id);
     if (!workspace) return res.status(403).json({ error: 'User has no business workspace' });
-
     await new Promise((resolve, reject) => req.session.regenerate(err => err ? reject(err) : resolve()));
     req.session.user = { id: user.id, email: user.email, name: user.name, businessId: workspace.id };
     req.session.csrf = crypto.randomBytes(32).toString('hex');
@@ -209,9 +201,8 @@ app.patch('/api/workspace', requireAuth, async (req, res) => {
   res.json(result.rows[0]);
 });
 
-// Current frontend is still the demo UI. The backend is now the production entry point.
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/', (req, res) => res.type('html').send(appHtml));
+app.get('/app', (req, res) => res.type('html').send(appHtml));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: isProduction ? '1d' : 0 }));
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
