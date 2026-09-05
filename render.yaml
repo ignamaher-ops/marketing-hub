@@ -1,3 +1,8 @@
+databases:
+  - name: marketing-hub-db
+    databaseName: marketing_hub
+    user: marketing_hub
+
 services:
   - type: web
     name: marketing-hub
@@ -9,8 +14,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: marketing-hub-db
+          property: connectionString
       - key: SESSION_SECRET
-        sync: false
+        generateValue: true
       - key: SEED_DEMO
         value: "false"
