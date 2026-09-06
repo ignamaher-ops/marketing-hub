@@ -5,10 +5,17 @@
     if(document.getElementById('mh-auth'))return;
     if(window.MarketingHubAuth && !localStorage.getItem('mh_session')){
       const script=document.createElement('script');
-      script.src='/auth-ui.js';
-      script.defer=true;
-      document.head.appendChild(script);
+      script.src='/auth-ui.js'; script.defer=true; document.head.appendChild(script);
     }
+  }
+
+  function injectRecommendations(){
+    if(document.getElementById('mh-recommendations-script'))return;
+    const script=document.createElement('script');
+    script.id='mh-recommendations-script';
+    script.src='/recommendations.js';
+    script.defer=true;
+    document.head.appendChild(script);
   }
 
   const READY_CLASS='mh-product-upgrades-ready';
@@ -38,7 +45,7 @@
     document.querySelectorAll('button').forEach(button=>{if(!button.getAttribute('aria-label')&&!button.textContent.trim())button.setAttribute('aria-label','Acción')});
   }
   function boot(){
-    injectAuthUi();
+    injectAuthUi(); injectRecommendations();
     if(document.documentElement.classList.contains(READY_CLASS))return;
     document.documentElement.classList.add(READY_CLASS);injectStyles();improveForms();
     if(!sessionStorage.getItem('mh_banner_hidden'))addProductBanner();
