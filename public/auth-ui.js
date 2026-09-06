@@ -1,0 +1,26 @@
+(() => {
+  const css = `#mh-auth{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:#f5f5fb;font-family:Inter,system-ui,sans-serif;color:#14152b}#mh-auth .card{width:min(430px,100%);background:#fff;border:1px solid #e4e4f0;border-radius:20px;padding:28px;box-shadow:0 24px 70px rgba(20,21,43,.14)}#mh-auth h1{font-family:Sora,Inter,sans-serif;font-size:25px;margin:0 0 7px}#mh-auth p{font-size:13px;color:#6b6c86;line-height:1.5;margin:0 0 20px}#mh-auth form{display:grid;gap:12px}#mh-auth label{font-size:11px;font-weight:800;color:#3a3b57;display:grid;gap:6px}#mh-auth input,#mh-auth select{border:1px solid #e4e4f0;border-radius:9px;padding:11px;outline:none}#mh-auth button{border:0;border-radius:9px;padding:11px;font-weight:800;background:#5b4cf5;color:#fff;cursor:pointer}#mh-auth .switch{background:none;color:#5b4cf5;padding:9px}.mh-error{background:#fde aeb;color:#a52b31;border-radius:9px;padding:10px;font-size:12px}`.replace('fde aeb','fdeaeb');
+  const style=document.createElement('style');style.textContent=css;document.head.appendChild(style);
+  const app=document.querySelector('.app');
+  if(app)app.style.visibility='hidden';
+  let mode='login';
+  function esc(v){return String(v).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));}
+  function render(error=''){
+    let el=document.getElementById('mh-auth');
+    if(!el){el=document.createElement('div');el.id='mh-auth';document.body.appendChild(el);}
+    const register=mode==='register';
+    el.innerHTML=`<div class="card"><div style="display:flex;align-items:center;gap:10px;font:800 20px Sora,Inter,sans-serif;margin-bottom:22px"><b style="width:36px;height:36px;border-radius:10px;background:#5b4cf5;color:#fff;display:grid;place-items:center">M</b>Marketing<span style="color:#5b4cf5">Hub</span></div><h1>${register?'Creá tu cuenta':'Bienvenido'}</h1><p>${register?'Gestioná el marketing de tu negocio desde un solo lugar.':'Iniciá sesión para entrar a tu workspace.'}</p>${error?`<div class="mh-error">${esc(error)}</div><div style="height:10px"></div>`:''}<form id="mh-auth-form">${register?'<label>Nombre<input id="mh-name" required maxlength="80" autocomplete="name"></label>':''}<label>Email<input id="mh-email" type="email" required autocomplete="email"></label>${register?'<label>Negocio<input id="mh-business" required maxlength="120" autocomplete="organization"></label><label>Categoría<select id="mh-category"><option>Restaurante</option><option>Café</option><option>Barbería</option><option>Local de ropa</option><option>Servicios</option><option>Otro</option></select></label>':''}<label>Contraseña<input id="mh-password" type="password" required minlength="${register?10:1}" autocomplete="${register?'new-password':'current-password'}"></label><button>${register?'Crear cuenta':'Iniciar sesión'}</button></form><button class="switch" id="mh-switch">${register?'Ya tengo una cuenta':'Crear una cuenta'}</button></div>`;
+    el.querySelector('#mh-switch').onclick=()=>{mode=register?'login':'register';render();};
+    el.querySelector('#mh-auth-form').onsubmit=async e=>{
+      e.preventDefault();const button=el.querySelector('form button');button.disabled=true;button.textContent='Conectando…';
+      try{
+        const csrf=await window.MarketingHubAuth.getCsrf();
+        const body=register?{name:el.querySelector('#mh-name').value.trim(),email:el.querySelector('#mh-email').value.trim(),businessName:el.querySelector('#mh-business').value.trim(),category:el.querySelector('#mh-category').value,password:el.querySelector('#mh-password').value}:{email:el.querySelector('#mh-email').value.trim(),password:el.querySelector('#mh-password').value};
+        const r=await fetch(register?'/api/auth/register':'/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(body)});const data=await r.json().catch(()=>({}));
+        if(!r.ok)throw new Error(data.error||'No se pudo iniciar sesión.');
+        localStorage.setItem('mh_session','1');localStorage.setItem('mh_user',JSON.stringify(data.user||{}));localStorage.setItem('mh_workspace',JSON.stringify(data.workspace||{}));location.reload();
+      }catch(err){render(err.message);}
+    };
+  }
+  fetch('/api/auth/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(data=>{if(data?.authenticated){localStorage.setItem('mh_session','1');return;}render();}).catch(()=>render('No se pudo conectar con el servidor.'));
+})();
