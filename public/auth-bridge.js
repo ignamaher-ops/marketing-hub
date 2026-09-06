@@ -87,4 +87,10 @@
   window.MarketingHubAuth = { getCsrf, login, restoreSession };
   getCsrf().catch(() => {});
   restoreSession();
+
+  // Load product-level UX improvements without changing the core application bundle.
+  const upgrades = document.createElement('script');
+  upgrades.src = '/product-upgrades.js';
+  upgrades.defer = true;
+  document.head.appendChild(upgrades);
 })();
