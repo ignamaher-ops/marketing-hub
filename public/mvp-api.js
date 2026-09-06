@@ -2,86 +2,38 @@
   const api = {
     async request(url, options = {}) {
       const csrf = window.MarketingHubAuth?.getCsrf ? await window.MarketingHubAuth.getCsrf() : '';
-      const response = await fetch(url, {
-        credentials: 'same-origin',
-        ...options,
-        headers: {
-          ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
-          ...(options.headers || {})
-        }
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'No se pudo completar la operación.');
+      const response = await fetch(url, { credentials:'same-origin', ...options, headers:{ ...(options.body?{'Content-Type':'application/json'}:{}), ...(csrf?{'X-CSRF-Token':csrf}:{}), ...(options.headers||{}) } });
+      const data = await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data.error||'No se pudo completar la operación.');
       return data;
     },
-    customer(c) { return { id:String(c.id), name:c.name, phone:c.phone || '', email:c.email || '', status:c.status === 'active' ? 'Activo' : c.status === 'inactive' ? 'Inactivo' : (c.status || 'Activo'), last:c.last_purchase || '', purchases:Number(c.purchases)||0, total_spent:Number(c.total_spent)||0 }; },
-    content(c) { return { id:String(c.id), title:c.title, date:c.scheduled_date || '', platform:c.platform, format:c.type, status:c.status === 'scheduled' ? 'Programado' : c.status === 'published' ? 'Publicado' : 'Borrador', copy:c.copy || '' }; },
-    review(r) { return { id:String(r.id), name:r.customer_name, rating:Number(r.rating)||0, comment:r.comment || '', status:r.status === 'answered' ? 'Respondida' : 'Sin responder', reply:r.response || '', date:r.created_at ? String(r.created_at).slice(0,10) : '' }; },
-    promo(p) { return { id:String(p.id), name:p.title, code:p.code, discount:p.discount, start:p.start_date || '', end:p.end_date || '', uses:Number(p.uses)||0, status:p.status === 'inactive' ? 'Inactiva' : 'Activa' }; },
-    async loadAll() {
-      if (!localStorage.getItem('mh_session')) return;
-      try {
-        const [customers, content, reviews, promotions, workspace] = await Promise.all([
-          this.request('/api/customers'), this.request('/api/content'), this.request('/api/reviews'), this.request('/api/promotions'), this.request('/api/workspace')
-        ]);
-        if (typeof DB === 'undefined') return;
-        DB.customers=(customers.customers||[]).map(this.customer);
-        DB.content=(content.content||[]).map(this.content);
-        DB.reviews=(reviews.reviews||[]).map(this.review);
-        DB.promotions=(promotions.promotions||[]).map(this.promo);
-        if (workspace) DB.business={...DB.business,name:workspace.name,category:workspace.category,budget:Number(workspace.monthly_budget)||0,address:workspace.address||'',phone:workspace.phone||'',instagram:workspace.instagram||'',whatsapp:DB.business.whatsapp||''};
-        saveDB();
-        if (typeof render === 'function') render();
-      } catch (error) { console.warn('MVP API hydration unavailable:', error.message); }
+    customer(c){const statusMap={new:'Nuevo',active:'Activo',inactive:'Inactivo',frequent:'Frecuente'};return{id:String(c.id),name:c.name,phone:c.phone||'',email:c.email||'',status:statusMap[c.status]||c.status||'Nuevo',last:c.last_purchase||'',purchases:Number(c.purchases)||0,total_spent:Number(c.total_spent)||0};},
+    content(c){const statusMap={draft:'Borrador',scheduled:'Programado',published:'Publicado'};return{id:String(c.id),title:c.title,date:c.scheduled_date||'',platform:c.platform,format:c.type,status:statusMap[c.status]||c.status||'Borrador',copy:c.copy||''};},
+    review(r){return{id:String(r.id),name:r.customer_name,rating:Number(r.rating)||0,comment:r.comment||'',status:r.status==='answered'?'Respondida':'Sin responder',reply:r.response||'',date:r.created_at?String(r.created_at).slice(0,10):''};},
+    promo(p){return{id:String(p.id),name:p.title,code:p.code,discount:p.discount,start:p.start_date||'',end:p.end_date||'',uses:Number(p.uses)||0,status:p.status==='inactive'?'Inactiva':'Activa'};},
+    async loadAll(){
+      if(!localStorage.getItem('mh_session'))return;
+      try{
+        const [customers,content,reviews,promotions,workspace,campaigns]=await Promise.all([this.request('/api/customers'),this.request('/api/content'),this.request('/api/reviews'),this.request('/api/promotions'),this.request('/api/workspace'),this.request('/api/campaigns')]);
+        if(typeof DB==='undefined')return;
+        DB.customers=(customers.customers||[]).map(this.customer);DB.content=(content.content||[]).map(this.content);DB.reviews=(reviews.reviews||[]).map(this.review);DB.promotions=(promotions.promotions||[]).map(this.promo);
+        DB.campaigns=(campaigns.campaigns||[]).map(c=>({id:String(c.id),name:c.name,platform:c.platform,objective:c.objective,budget:Number(c.budget)||0,spent:Number(c.spent)||0,sales:Number(c.sales)||0,queries:Number(c.leads)||0,status:c.status==='active'?'Activa':c.status==='paused'?'Pausada':'Finalizada',start_date:c.start_date||'',end_date:c.end_date||''}));
+        if(workspace)DB.business={...DB.business,name:workspace.name,category:workspace.category,budget:Number(workspace.monthly_budget)||0,address:workspace.address||'',phone:workspace.phone||'',instagram:workspace.instagram||'',whatsapp:DB.business.whatsapp||''};
+        saveDB();if(typeof render==='function')render();
+      }catch(error){console.warn('MVP API hydration unavailable:',error.message);}
     },
     async createCustomer(payload){const d=await this.request('/api/customers',{method:'POST',body:JSON.stringify(payload)});return this.customer(d.customer);},
     async createContent(payload){const d=await this.request('/api/content',{method:'POST',body:JSON.stringify(payload)});return this.content(d.content);},
     async createPromotion(payload){const d=await this.request('/api/promotions',{method:'POST',body:JSON.stringify(payload)});return this.promo(d.promotion);},
     async updateReview(id,response){const d=await this.request(`/api/reviews/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({response})});return this.review(d.review);},
     async deleteResource(type,id){await this.request(`/api/${type}/${encodeURIComponent(id)}`,{method:'DELETE'});},
-    async updateWorkspace(payload){const d=await this.request('/api/workspace',{method:'PATCH',body:JSON.stringify(payload)});return d;}
+    async updateWorkspace(payload){return this.request('/api/workspace',{method:'PATCH',body:JSON.stringify(payload)});}
   };
-
-  window.MarketingHubMVP = api;
-
-  window.customerModal = function customerModal(){
-    openModal('Nuevo cliente',`<form id="customer-form"><div class="form-grid"><div class="field"><label>Nombre</label><input name="name" required></div><div class="field"><label>Teléfono</label><input name="phone"></div><div class="field"><label>Email</label><input name="email" type="email"></div><div class="field"><label>Estado</label><select name="status"><option>Activo</option><option>Inactivo</option></select></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-customer">Guardar</button>`);
-    document.getElementById('cancel-modal').onclick=closeModal;
-    document.getElementById('save-customer').onclick=async()=>{const f=new FormData(document.getElementById('customer-form'));const button=document.getElementById('save-customer');if(!document.getElementById('customer-form').reportValidity())return;button.disabled=true;try{const saved=await api.createCustomer({name:String(f.get('name')).trim(),phone:f.get('phone'),email:f.get('email'),status:String(f.get('status')).toLowerCase()});DB.customers.unshift(saved);saveDB();closeModal();render();}catch(e){button.disabled=false;alert(e.message);}};
-  };
-
-  window.contentModal = function contentModal(){
-    openModal('Nuevo contenido',`<form id="content-form"><div class="form-grid"><div class="field full"><label>Título</label><input name="title" required placeholder="Ej. Promo de viernes"></div><div class="field"><label>Fecha</label><input name="date" type="date" required></div><div class="field"><label>Plataforma</label><select name="platform"><option>Instagram</option><option>Facebook</option><option>WhatsApp</option><option>TikTok</option></select></div><div class="field"><label>Formato</label><select name="format"><option>Post</option><option>Reel</option><option>Story</option><option>Mensaje</option></select></div><div class="field"><label>Estado</label><select name="status"><option>Borrador</option><option>Programado</option><option>Publicado</option></select></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-content">Guardar</button>`);
-    document.getElementById('cancel-modal').onclick=closeModal;
-    document.getElementById('save-content').onclick=async()=>{const form=document.getElementById('content-form');if(!form.reportValidity())return;const f=new FormData(form),button=document.getElementById('save-content');button.disabled=true;try{const status=String(f.get('status')).toLowerCase();const saved=await api.createContent({title:String(f.get('title')).trim(),date:f.get('date'),platform:f.get('platform'),format:f.get('format'),status});DB.content.push(saved);saveDB();closeModal();render();}catch(e){button.disabled=false;alert(e.message);}};
-  };
-
-  window.promoModal = function promoModal(){
-    openModal('Nueva promoción',`<form id="promo-form"><div class="form-grid"><div class="field"><label>Nombre</label><input name="name" required placeholder="Ej. 15% primera compra"></div><div class="field"><label>Código</label><input name="code" required placeholder="PRIMERA15"></div><div class="field"><label>Descuento</label><input name="discount" required placeholder="15% / 2x1"></div><div class="field"><label>Inicio</label><input name="start" type="date" required></div><div class="field"><label>Fin</label><input name="end" type="date" required></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-promo">Guardar</button>`);
-    document.getElementById('cancel-modal').onclick=closeModal;
-    document.getElementById('save-promo').onclick=async()=>{const form=document.getElementById('promo-form');if(!form.reportValidity())return;const f=new FormData(form),button=document.getElementById('save-promo');button.disabled=true;try{const saved=await api.createPromotion({title:String(f.get('name')).trim(),code:String(f.get('code')).trim().toUpperCase(),discount:String(f.get('discount')).trim(),start:f.get('start'),end:f.get('end')});DB.promotions.unshift(saved);saveDB();closeModal();render();}catch(e){button.disabled=false;alert(e.message);}};
-  };
-
-  window.reviewModal = function reviewModal(id){
-    const r=DB.reviews.find(x=>String(x.id)===String(id));if(!r)return;
-    const suggested=`¡Gracias por tu comentario, ${r.name}! Nos alegra mucho saber que disfrutaste la experiencia. Tomamos tu observación para seguir mejorando y esperamos verte nuevamente pronto.`;
-    openModal('Responder reseña',`<div class="card ai-box"><strong>Sugerencia</strong><p class="subtitle">${esc(suggested)}</p><button class="btn secondary" id="use-suggestion" style="margin-top:10px">Usar sugerencia</button></div><div style="height:12px"></div><div class="field"><label>Respuesta</label><textarea id="review-reply">${esc(r.reply||'')}</textarea></div>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-review">Guardar respuesta</button>`);
-    document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('use-suggestion').onclick=()=>document.getElementById('review-reply').value=suggested;
-    document.getElementById('save-review').onclick=async()=>{const response=document.getElementById('review-reply').value.trim();if(!response)return alert('Escribí una respuesta antes de guardar.');const button=document.getElementById('save-review');button.disabled=true;try{const saved=await api.updateReview(id,response);const i=DB.reviews.findIndex(x=>String(x.id)===String(id));if(i>=0)DB.reviews[i]=saved;saveDB();closeModal();render();}catch(e){button.disabled=false;alert(e.message);}};
-  };
-
-  // Intercept legacy localStorage mutations for deletes and workspace settings.
-  document.addEventListener('click',async event=>{
-    const contentDelete=event.target.closest?.('[data-delete-content]');
-    const promoDelete=event.target.closest?.('[data-delete-promo]');
-    const reviewButton=event.target.closest?.('[data-review]');
-    const saveSettings=event.target.closest?.('#save-settings');
-    if(contentDelete){event.preventDefault();event.stopImmediatePropagation();const id=contentDelete.dataset.deleteContent;if(!confirm('¿Eliminar este contenido?'))return;try{await api.deleteResource('content',id);DB.content=DB.content.filter(x=>String(x.id)!==String(id));saveDB();render();}catch(e){alert(e.message);}return;}
-    if(promoDelete){event.preventDefault();event.stopImmediatePropagation();const id=promoDelete.dataset.deletePromo;if(!confirm('¿Eliminar esta promoción?'))return;try{await api.deleteResource('promotions',id);DB.promotions=DB.promotions.filter(x=>String(x.id)!==String(id));saveDB();render();}catch(e){alert(e.message);}return;}
-    if(reviewButton){event.preventDefault();event.stopImmediatePropagation();window.reviewModal(reviewButton.dataset.review);return;}
-    if(saveSettings){event.preventDefault();event.stopImmediatePropagation();const form=document.getElementById('settings-form');if(!form?.reportValidity())return;const f=new FormData(form);try{const workspace=await api.updateWorkspace({name:String(f.get('name')).trim(),category:String(f.get('category')).trim(),monthly_budget:Number(f.get('budget'))||0,phone:f.get('phone'),address:f.get('address'),instagram:f.get('instagram')});DB.business={...DB.business,name:workspace.name,category:workspace.category,budget:Number(workspace.monthly_budget)||0,phone:workspace.phone||'',address:workspace.address||'',instagram:workspace.instagram||''};saveDB();render();alert('Cambios guardados.');}catch(e){alert(e.message);}return;}
-  },true);
-
+  window.MarketingHubMVP=api;
+  window.customerModal=function(){openModal('Nuevo cliente',`<form id="customer-form"><div class="form-grid"><div class="field"><label>Nombre</label><input name="name" required></div><div class="field"><label>Teléfono</label><input name="phone"></div><div class="field"><label>Email</label><input name="email" type="email"></div><div class="field"><label>Estado</label><select name="status"><option value="active">Activo</option><option value="inactive">Inactivo</option><option value="frequent">Frecuente</option></select></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-customer">Guardar</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('save-customer').onclick=async()=>{const form=document.getElementById('customer-form');if(!form.reportValidity())return;const f=new FormData(form),button=document.getElementById('save-customer');button.disabled=true;try{const saved=await api.createCustomer({name:String(f.get('name')).trim(),phone:f.get('phone'),email:f.get('email'),status:f.get('status')});DB.customers.unshift(saved);saveDB();closeModal();render();}catch(e){button.disabled=false;alert(e.message);}};};
+  window.contentModal=function(){openModal('Nuevo contenido',`<form id="content-form"><div class="form-grid"><div class="field full"><label>Título</label><input name="title" required placeholder="Ej. Promo de viernes"></div><div class="field"><label>Fecha</label><input name="date" type="date" required></div><div class="field"><label>Plataforma</label><select name="platform"><option>Instagram</option><option>Facebook</option><option>WhatsApp</option><option>TikTok</option></select></div><div class="field"><label>Formato</label><select name="format"><option>Post</option><option>Reel</option><option>Story</option><option>Mensaje</option></select></div><div class="field"><label>Estado</label><select name="status"><option value="draft">Borrador</option><option value="scheduled">Programado</option><option value="published">Publicado</option></select></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-content">Guardar</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('save-content').onclick=async()=>{const form=document.getElementById('content-form');if(!form.reportValidity())return;const f=new FormData(form),button=document.getElementById('save-content');button.disabled=true;try{const saved=await api.createContent({title:String(f.get('title')).trim(),date:f.get('date'),platform:f.get('platform'),format:f.get('format'),status:f.get('status')});DB.content.push(saved);saveDB();closeModal();render();}catch(e){button.disabled=false;alert(e.message);}};};
+  window.promoModal=function(){openModal('Nueva promoción',`<form id="promo-form"><div class="form-grid"><div class="field"><label>Nombre</label><input name="name" required placeholder="Ej. 15% primera compra"></div><div class="field"><label>Código</label><input name="code" required placeholder="PRIMERA15"></div><div class="field"><label>Descuento</label><input name="discount" required placeholder="15% / 2x1"></div><div class="field"><label>Inicio</label><input name="start" type="date" required></div><div class="field"><label>Fin</label><input name="end" type="date" required></div></div></form>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-promo">Guardar</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('save-promo').onclick=async()=>{const form=document.getElementById('promo-form');if(!form.reportValidity())return;const f=new FormData(form),button=document.getElementById('save-promo');button.disabled=true;try{const saved=await api.createPromotion({title:String(f.get('name')).trim(),code:String(f.get('code')).trim().toUpperCase(),discount:String(f.get('discount')).trim(),start:f.get('start'),end:f.get('end')});DB.promotions.unshift(saved);saveDB();closeModal();render();}catch(e){button.disabled=false;alert(e.message);}};};
+  window.reviewModal=function(id){const r=DB.reviews.find(x=>String(x.id)===String(id));if(!r)return;const suggested=`¡Gracias por tu comentario, ${r.name}! Nos alegra mucho saber que disfrutaste la experiencia. Tomamos tu observación para seguir mejorando y esperamos verte nuevamente pronto.`;openModal('Responder reseña',`<div class="card ai-box"><strong>Sugerencia</strong><p class="subtitle">${esc(suggested)}</p><button class="btn secondary" id="use-suggestion" style="margin-top:10px">Usar sugerencia</button></div><div style="height:12px"></div><div class="field"><label>Respuesta</label><textarea id="review-reply">${esc(r.reply||'')}</textarea></div>`,`<button class="btn secondary" id="cancel-modal">Cancelar</button><button class="btn primary" id="save-review">Guardar respuesta</button>`);document.getElementById('cancel-modal').onclick=closeModal;document.getElementById('use-suggestion').onclick=()=>document.getElementById('review-reply').value=suggested;document.getElementById('save-review').onclick=async()=>{const response=document.getElementById('review-reply').value.trim();if(!response)return alert('Escribí una respuesta antes de guardar.');const button=document.getElementById('save-review');button.disabled=true;try{const saved=await api.updateReview(id,response);const i=DB.reviews.findIndex(x=>String(x.id)===String(id));if(i>=0)DB.reviews[i]=saved;saveDB();closeModal();render();}catch(e){button.disabled=false;alert(e.message);}};};
+  document.addEventListener('click',async event=>{const contentDelete=event.target.closest?.('[data-delete-content]');const promoDelete=event.target.closest?.('[data-delete-promo]');const reviewButton=event.target.closest?.('[data-review]');const saveSettings=event.target.closest?.('#save-settings');if(contentDelete){event.preventDefault();event.stopImmediatePropagation();const id=contentDelete.dataset.deleteContent;if(!confirm('¿Eliminar este contenido?'))return;try{await api.deleteResource('content',id);DB.content=DB.content.filter(x=>String(x.id)!==String(id));saveDB();render();}catch(e){alert(e.message);}return;}if(promoDelete){event.preventDefault();event.stopImmediatePropagation();const id=promoDelete.dataset.deletePromo;if(!confirm('¿Eliminar esta promoción?'))return;try{await api.deleteResource('promotions',id);DB.promotions=DB.promotions.filter(x=>String(x.id)!==String(id));saveDB();render();}catch(e){alert(e.message);}return;}if(reviewButton){event.preventDefault();event.stopImmediatePropagation();window.reviewModal(reviewButton.dataset.review);return;}if(saveSettings){event.preventDefault();event.stopImmediatePropagation();const form=document.getElementById('settings-form');if(!form?.reportValidity())return;const f=new FormData(form);try{const workspace=await api.updateWorkspace({name:String(f.get('name')).trim(),category:String(f.get('category')).trim(),monthly_budget:Number(f.get('budget'))||0,phone:f.get('phone'),address:f.get('address'),instagram:f.get('instagram')});DB.business={...DB.business,name:workspace.name,category:workspace.category,budget:Number(workspace.monthly_budget)||0,phone:workspace.phone||'',address:workspace.address||'',instagram:workspace.instagram||''};saveDB();render();alert('Cambios guardados.');}catch(e){alert(e.message);}return;}},true);
   let attempts=0;const hydrate=async()=>{attempts++;if(typeof DB!=='undefined'&&localStorage.getItem('mh_session')){await api.loadAll();return;}if(attempts<80)setTimeout(hydrate,250);};hydrate();
 })();
