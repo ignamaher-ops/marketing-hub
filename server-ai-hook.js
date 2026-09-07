@@ -16,7 +16,7 @@ if (!fs.__marketingAgentHtmlPatched) {
     const result = originalReadFileSync.call(this, file, options);
     const fileName = String(file);
     if (fileName.endsWith('index.html') && typeof result === 'string' && !result.includes('/marketing-agent.js')) {
-      return result.replace('</body>', '<script src="/marketing-agent.js"></script></body>');
+      return result.replace('</body>', '<script src="/marketing-agent.js"></script><script src="/explainability.js"></script></body>');
     }
     return result;
   };
