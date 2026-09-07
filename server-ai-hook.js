@@ -8,7 +8,8 @@ const fs = require('fs');
 const { pool } = require('./db');
 
 // The current app builds its HTML string in server.js. Inject the agent UI
-// without duplicating the whole server file or exposing any API key in the browser.
+// and dashboard recommendations without duplicating the whole server file or
+// exposing any API key in the browser.
 if (!fs.__marketingAgentHtmlPatched) {
   fs.__marketingAgentHtmlPatched = true;
   const originalReadFileSync = fs.readFileSync;
@@ -16,7 +17,7 @@ if (!fs.__marketingAgentHtmlPatched) {
     const result = originalReadFileSync.call(this, file, options);
     const fileName = String(file);
     if (fileName.endsWith('index.html') && typeof result === 'string' && !result.includes('/marketing-agent.js')) {
-      return result.replace('</body>', '<script src="/marketing-agent.js"></script><script src="/explainability.js"></script></body>');
+      return result.replace('</body>', '<script src="/marketing-agent.js"></script><script src="/recommendations.js"></script><script src="/explainability.js"></script></body>');
     }
     return result;
   };
