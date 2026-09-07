@@ -83,6 +83,51 @@
     }
   }
 
+  function improveReadability() {
+    if (document.getElementById('mh-readable-ui')) return;
+    const style = document.createElement('style');
+    style.id = 'mh-readable-ui';
+    style.textContent = `
+      /* Marketing Hub — interfaz simple y fácil de leer */
+      body { font-size: 15px; }
+      .nav { gap: 6px; }
+      .nav button { min-height: 46px; padding: 12px 13px; font-size: 15px; gap: 12px; }
+      .nav-icon { width: 22px; font-size: 18px; }
+      .sidebar-bottom button { min-height: 46px; font-size: 14px; }
+      .container { padding-top: 30px; padding-bottom: 36px; }
+      .subtitle { font-size: 14px; line-height: 1.6; }
+      .card { padding: 21px; }
+      .kpi { min-height: 138px; }
+      .kpi-top { font-size: 13px; }
+      .kpi-value { font-size: 28px; }
+      .kpi-foot { font-size: 13px; }
+      .section-title p { font-size: 13px; }
+      .list-main strong { font-size: 14px; }
+      .list-main small, .alert p { font-size: 12px; line-height: 1.55; }
+      .alert strong { font-size: 13px; }
+      .btn { min-height: 44px; padding: 11px 16px; font-size: 14px; }
+      th { font-size: 12px; }
+      th, td { padding: 13px 14px; font-size: 13px; }
+      .field label { font-size: 12px; }
+      .field input, .field select, .field textarea { min-height: 44px; font-size: 14px; }
+      .integration h3 { font-size: 14px; }
+      .integration p { font-size: 12px; line-height: 1.5; }
+      .connection { font-size: 11px; }
+      .empty { font-size: 14px; line-height: 1.5; }
+      h1 { font-size: 30px; }
+      h2 { font-size: 20px; }
+      h3 { font-size: 16px; }
+      /* Reduce visual noise without hiding useful information */
+      .dot { width: 8px; height: 8px; }
+      @media(max-width:820px) {
+        .nav button { min-height: 48px; font-size: 15px; }
+        .container { padding-top: 22px; }
+        h1 { font-size: 26px; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   document.addEventListener('submit', async (event) => {
     const form = event.target;
     if (!form || form.id !== 'login-form') return;
@@ -116,8 +161,9 @@
 
   getCsrf().catch(() => {});
   restoreSession();
+  improveReadability();
 
-  const observer = new MutationObserver(() => ensureLogoutButton());
+  const observer = new MutationObserver(() => { ensureLogoutButton(); improveReadability(); });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   ensureLogoutButton();
 
