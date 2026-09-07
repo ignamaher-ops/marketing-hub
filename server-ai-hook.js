@@ -4,7 +4,23 @@
  * The route is inserted immediately before the final 404 middleware.
  */
 const express = require('express');
+const fs = require('fs');
 const { pool } = require('./db');
+
+// The current app builds its HTML string in server.js. Inject the agent UI
+// without duplicating the whole server file or exposing any API key in the browser.
+if (!fs.__marketingAgentHtmlPatched) {
+  fs.__marketingAgentHtmlPatched = true;
+  const originalReadFileSync = fs.readFileSync;
+  fs.readFileSync = function patchedReadFileSync(file, options) {
+    const result = originalReadFileSync.call(this, file, options);
+    const fileName = String(file);
+    if (fileName.endsWith('index.html') && typeof result === 'string' && !result.includes('/marketing-agent.js')) {
+      return result.replace('</body>', '<script src="/marketing-agent.js"></script></body>');
+    }
+    return result;
+  };
+}
 
 if (!express.application.__marketingAiPatched) {
   express.application.__marketingAiPatched = true;
