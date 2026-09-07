@@ -49,26 +49,47 @@
   }
 
   function ensureLogoutButton() {
-    if (document.getElementById('logout-btn')) return;
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
-    const wrapper = document.createElement('div');
-    wrapper.id = 'mh-logout-wrap';
-    wrapper.style.cssText = 'margin-top:auto;padding:12px 14px 2px;';
+    let bottom = sidebar.querySelector('.sidebar-bottom');
+    if (!bottom) {
+      bottom = document.createElement('div');
+      bottom.className = 'sidebar-bottom';
+      sidebar.appendChild(bottom);
+    }
 
-    const button = document.createElement('button');
-    button.id = 'logout-btn';
-    button.type = 'button';
-    button.textContent = 'Cerrar sesión';
-    button.setAttribute('aria-label', 'Cerrar sesión');
-    button.style.cssText = 'width:100%;border:1px solid #E4E4F0;background:#fff;color:#E0454B;padding:10px 12px;border-radius:10px;text-align:left;font-weight:700;font-size:13px;cursor:pointer;';
-    button.addEventListener('mouseenter', () => { button.style.background = '#FDEAEB'; });
-    button.addEventListener('mouseleave', () => { button.style.background = '#fff'; });
+    if (!bottom.querySelector('#logout-btn')) {
+      const button = document.createElement('button');
+      button.id = 'logout-btn';
+      button.type = 'button';
+      button.setAttribute('data-action', 'logout');
+      button.innerHTML = '<span style="width:20px;text-align:center;font-size:15px;">↪</span><span>Cerrar sesión</span>';
+      bottom.appendChild(button);
+    }
 
-    wrapper.appendChild(button);
-    sidebar.appendChild(wrapper);
+    if (!document.getElementById('mh-sidebar-scroll-style')) {
+      const style = document.createElement('style');
+      style.id = 'mh-sidebar-scroll-style';
+      style.textContent = `
+        .sidebar { overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: #D9D9E7; border-radius: 999px; }
+        .sidebar-bottom { margin-top: 20px; padding-bottom: 4px; }
+        #logout-btn { width: 100%; display: flex; align-items: center; gap: 11px; }
+      `;
+      document.head.appendChild(style);
+    }
   }
+
+  document.addEventListener('submit', async (event) => {
+    const form = event.target;
+    if (!form || form.id !== 'login-form') return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    try { await login(document.getElementById('login-email')?.value?.trim(), document.getElementById('login-pass')?.value || ''); }
+    catch (error) { showError(error.message); }
+  }, true);
 
   async function logout() {
     try {
@@ -84,14 +105,6 @@
     window.scrollTo(0, 0);
   }
 
-  document.addEventListener('submit', async (event) => {
-    const form = event.target;
-    if (!form || form.id !== 'login-form') return;
-    event.preventDefault(); event.stopImmediatePropagation();
-    try { await login(document.getElementById('login-email')?.value?.trim(), document.getElementById('login-pass')?.value || ''); }
-    catch (error) { showError(error.message); }
-  }, true);
-
   document.addEventListener('click', async (event) => {
     const logoutButton = event.target.closest?.('#logout-btn, [data-action="logout"], [data-page="logout"]');
     if (!logoutButton) return;
@@ -101,17 +114,12 @@
 
   window.MarketingHubAuth = { getCsrf, login, restoreSession, logout };
 
-  function init() {
-    ensureLogoutButton();
-    getCsrf().catch(() => {});
-    restoreSession();
-  }
+  getCsrf().catch(() => {});
+  restoreSession();
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once:true });
-  } else {
-    init();
-  }
+  const observer = new MutationObserver(() => ensureLogoutButton());
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  ensureLogoutButton();
 
   const upgrades = document.createElement('script');
   upgrades.src = '/product-upgrades.js'; upgrades.defer = true;
