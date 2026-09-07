@@ -23,8 +23,7 @@
   async function login(email, password) {
     if (!csrfToken) await getCsrf();
     const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      credentials: 'same-origin',
+      method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       body: JSON.stringify({ email, password })
     });
@@ -52,45 +51,37 @@
   document.addEventListener('submit', async (event) => {
     const form = event.target;
     if (!form || form.id !== 'login-form') return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const email = document.getElementById('login-email')?.value?.trim();
-    const password = document.getElementById('login-pass')?.value || '';
-    try {
-      await login(email, password);
-    } catch (error) {
-      showError(error.message);
-    }
+    event.preventDefault(); event.stopImmediatePropagation();
+    try { await login(document.getElementById('login-email')?.value?.trim(), document.getElementById('login-pass')?.value || ''); }
+    catch (error) { showError(error.message); }
   }, true);
 
-  document.addEventListener('click', async (event) => {
-    const logout = event.target.closest?.('#logout-btn');
-    if (!logout) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
+  async function logout() {
     try {
       if (!csrfToken) await getCsrf();
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'X-CSRF-Token': csrfToken }
-      });
-    } finally {
-      localStorage.removeItem('mh_session');
-      localStorage.removeItem('mh_user');
-      localStorage.removeItem('mh_workspace');
-      document.getElementById('app-shell')?.classList.add('hidden');
-      document.getElementById('login-screen')?.classList.remove('hidden');
-    }
+      await fetch('/api/auth/logout', { method:'POST', credentials:'same-origin', headers:{'X-CSRF-Token':csrfToken} });
+    } catch (_) {}
+    localStorage.removeItem('mh_session');
+    localStorage.removeItem('mh_user');
+    localStorage.removeItem('mh_workspace');
+    sessionStorage.clear();
+    document.getElementById('app-shell')?.classList.add('hidden');
+    document.getElementById('login-screen')?.classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener('click', async (event) => {
+    const logoutButton = event.target.closest?.('#logout-btn, [data-action="logout"], [data-page="logout"]');
+    if (!logoutButton) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    await logout();
   }, true);
 
-  window.MarketingHubAuth = { getCsrf, login, restoreSession };
+  window.MarketingHubAuth = { getCsrf, login, restoreSession, logout };
   getCsrf().catch(() => {});
   restoreSession();
 
-  // Load product-level UX improvements without changing the core application bundle.
   const upgrades = document.createElement('script');
-  upgrades.src = '/product-upgrades.js';
-  upgrades.defer = true;
+  upgrades.src = '/product-upgrades.js'; upgrades.defer = true;
   document.head.appendChild(upgrades);
 })();
