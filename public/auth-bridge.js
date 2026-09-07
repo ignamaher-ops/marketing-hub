@@ -48,13 +48,27 @@
     } catch (_) {}
   }
 
-  document.addEventListener('submit', async (event) => {
-    const form = event.target;
-    if (!form || form.id !== 'login-form') return;
-    event.preventDefault(); event.stopImmediatePropagation();
-    try { await login(document.getElementById('login-email')?.value?.trim(), document.getElementById('login-pass')?.value || ''); }
-    catch (error) { showError(error.message); }
-  }, true);
+  function ensureLogoutButton() {
+    if (document.getElementById('logout-btn')) return;
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.id = 'mh-logout-wrap';
+    wrapper.style.cssText = 'margin-top:auto;padding:12px 14px 2px;';
+
+    const button = document.createElement('button');
+    button.id = 'logout-btn';
+    button.type = 'button';
+    button.textContent = 'Cerrar sesión';
+    button.setAttribute('aria-label', 'Cerrar sesión');
+    button.style.cssText = 'width:100%;border:1px solid #E4E4F0;background:#fff;color:#E0454B;padding:10px 12px;border-radius:10px;text-align:left;font-weight:700;font-size:13px;cursor:pointer;';
+    button.addEventListener('mouseenter', () => { button.style.background = '#FDEAEB'; });
+    button.addEventListener('mouseleave', () => { button.style.background = '#fff'; });
+
+    wrapper.appendChild(button);
+    sidebar.appendChild(wrapper);
+  }
 
   async function logout() {
     try {
@@ -70,6 +84,14 @@
     window.scrollTo(0, 0);
   }
 
+  document.addEventListener('submit', async (event) => {
+    const form = event.target;
+    if (!form || form.id !== 'login-form') return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    try { await login(document.getElementById('login-email')?.value?.trim(), document.getElementById('login-pass')?.value || ''); }
+    catch (error) { showError(error.message); }
+  }, true);
+
   document.addEventListener('click', async (event) => {
     const logoutButton = event.target.closest?.('#logout-btn, [data-action="logout"], [data-page="logout"]');
     if (!logoutButton) return;
@@ -78,8 +100,18 @@
   }, true);
 
   window.MarketingHubAuth = { getCsrf, login, restoreSession, logout };
-  getCsrf().catch(() => {});
-  restoreSession();
+
+  function init() {
+    ensureLogoutButton();
+    getCsrf().catch(() => {});
+    restoreSession();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once:true });
+  } else {
+    init();
+  }
 
   const upgrades = document.createElement('script');
   upgrades.src = '/product-upgrades.js'; upgrades.defer = true;
