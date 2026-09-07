@@ -1,13 +1,13 @@
 {
   "name": "marketing-hub",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "description": "Marketing management SaaS for small businesses",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "node --check server.js && node --check db.js"
+    "start": "node -r ./server-ai-hook.js server.js",
+    "dev": "node --watch -r ./server-ai-hook.js server.js",
+    "test": "node --check server.js && node --check db.js && node --check server-ai-hook.js"
   },
   "engines": {
     "node": ">=20"
